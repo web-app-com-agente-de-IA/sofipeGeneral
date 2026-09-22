@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sofipe - Corretora de Seguros</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="palco">
+  <svg id="fundo" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg>
+
+  <div class="container">
+
+    <header class="cabecalho">
+      <a class="marca" href="#" aria-label="Sofipe, página inicial">
+        <img class="simbolo" src="logo.png" alt="">
+        <span class="palavra">Sofipe</span>
+      </a>
+
+      <nav class="atalhos" aria-label="Seções">
+        <a class="atalho" href="#painel" data-secao="quem">Quem somos</a>
+        <a class="atalho" href="#painel" data-secao="seguros">Seguros</a>
+        <a class="atalho" href="#painel" data-secao="contato">Entre em contato</a>
+        <span class="usuario-logado" id="usuario-logado" hidden></span>
+        <button class="sair" id="sair" type="button" hidden>Sair</button>
+      </nav>
+    </header>
+
+    <main class="conteudo">
+      <h1 class="titulo"><b>Sofipe</b> Especialistas em planos de saúde, escolha com quem entende.</h1>
+
+      <section class="acesso" id="acesso" aria-label="Acesso do cliente">
+        <div class="marca-card">
+          <span class="selo">
+            <img class="simbolo" src="logo.png" alt="">
+            <span class="palavra">Sofipe</span>
+          </span>
+        </div>
+
+        <div class="campo">
+          <label class="caixa">
+            <span class="oculto">E-mail</span>
+            <input id="login" type="text" placeholder="E-mail" autocomplete="username" aria-describedby="erro-login">
+          </label>
+          <span class="erro" id="erro-login" role="status"></span>
+        </div>
+
+        <div class="campo">
+          <label class="caixa">
+            <span class="oculto">Senha</span>
+            <input id="senha" type="password" placeholder="Password" autocomplete="current-password" aria-describedby="erro-senha">
+            <button class="ver-senha" type="button" id="alternar" aria-label="Mostrar senha" aria-pressed="false">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/>
+                <circle cx="12" cy="12" r="2.8"/>
+              </svg>
+            </button>
+          </label>
+          <span class="erro" id="erro-senha" role="status"></span>
+        </div>
+
+        <button class="entrar" id="entrar" type="button">Entrar</button>
+        <p class="aviso" id="aviso" role="status"></p>
+
+        <p class="cadastro">
+          Ainda não tem conta?
+          <a href="#painel" data-secao="cadastro">Cadastre-se</a>
+        </p>
+      </section>
+
+      <article class="painel" id="painel" aria-hidden="true" tabindex="-1">
+        <h2 id="painel-titulo"></h2>
+        <div id="painel-texto"></div>
+      </article>
+    </main>
+
+    <section class="destaque" aria-label="Nosso compromisso">
+      <div class="destaque-faixa" aria-hidden="true"></div>
+      <p class="destaque-texto">Cuidamos do que importa para você, com dedicação e segurança a qualquer momento.</p>
+      <div class="destaque-caixa">
+        <p>Com experiência e dedicação, garantimos proteção confiável e suporte contínuo para sua tranquilidade.</p>
+      </div>
+    </section>
+
+    <footer class="rodape">
+      <a class="rodape-marca" href="#" aria-label="Sofipe, voltar ao topo">
+        <img class="simbolo" src="logo.png" alt="">
+        <span class="palavra">Sofipe</span>
+      </a>
+
+      <div class="rodape-coluna rodape-alto">
+        <p>Especialistas em planos de saúde, escolha com quem entende.</p>
+      </div>
+
+      <div class="rodape-coluna">
+        <p>Especialistas em planos de saúde, escolha com quem entende.</p>
+      </div>
+
+      <div class="rodape-coluna">
+        <p>Especialistas em planos de saúde, escolha com quem entende.</p>
+      </div>
+    </footer>
+
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
