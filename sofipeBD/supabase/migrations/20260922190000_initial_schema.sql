@@ -1,3 +1,7 @@
+-- BASELINE / SNAPSHOT
+-- Este arquivo representa o estado inicial do banco existente.
+-- NÃO executar em um banco que já possui estas tabelas.
+
 -- ============================================================
 -- SOFIPE - Initial database schema
 -- Generated from the existing Supabase database
