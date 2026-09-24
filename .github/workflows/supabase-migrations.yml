@@ -1,0 +1,38 @@
+name: Validar migrations do Supabase
+
+on:
+  pull_request:
+    paths:
+      - "sofipeBD/supabase/**"
+      - ".github/workflows/supabase-migrations.yml"
+  workflow_dispatch:
+
+jobs:
+  validate-migrations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: sofipeBD
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Instalar Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Subir Supabase local
+        run: supabase start
+
+      - name: Reaplicar todas as migrations do zero
+        run: supabase db reset
+
+      - name: Lint do schema (avisos e erros de SQL)
+        run: supabase db lint --level error
+
+      - name: Parar Supabase local
+        if: always()
+        run: supabase stop --no-backup
