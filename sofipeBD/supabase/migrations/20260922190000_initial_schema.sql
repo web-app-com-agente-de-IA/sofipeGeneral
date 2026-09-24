@@ -1,6 +1,6 @@
 -- BASELINE / SNAPSHOT
 -- Este arquivo representa o estado inicial do banco existente.
--- NÃO executar em um banco que já possui estas tabelas.
+-- Versão idempotente: pode ser executado com segurança mesmo se as tabelas já existirem.
 
 -- ============================================================
 -- SOFIPE - Initial database schema
@@ -11,7 +11,7 @@
 -- TABLES
 -- ============================================================
 
-create table public.profiles (
+create table if not exists public.profiles (
   id uuid not null,
   nome text not null,
   email text not null,
@@ -28,7 +28,7 @@ create table public.profiles (
     check (perfil = any (array['admin'::text, 'gestor'::text, 'vendedor'::text]))
 );
 
-create table public.canais_captacao (
+create table if not exists public.canais_captacao (
   id uuid not null default gen_random_uuid(),
   nome text not null,
   tipo text not null,
@@ -57,7 +57,7 @@ create table public.canais_captacao (
     )
 );
 
-create table public.integracoes (
+create table if not exists public.integracoes (
   id uuid not null default gen_random_uuid(),
   nome text not null,
   tipo text not null,
@@ -83,7 +83,7 @@ create table public.integracoes (
     )
 );
 
-create table public.leads (
+create table if not exists public.leads (
   id uuid not null default gen_random_uuid(),
   canal_id uuid,
   responsavel_id uuid,
@@ -121,7 +121,7 @@ create table public.leads (
     )
 );
 
-create table public.historico_status_lead (
+create table if not exists public.historico_status_lead (
   id uuid not null default gen_random_uuid(),
   lead_id uuid not null,
   status_anterior text,
@@ -137,7 +137,7 @@ create table public.historico_status_lead (
     foreign key (alterado_por) references public.profiles(id)
 );
 
-create table public.interacoes_agente (
+create table if not exists public.interacoes_agente (
   id uuid not null default gen_random_uuid(),
   lead_id uuid not null,
   mensagem text not null,
@@ -174,7 +174,7 @@ create table public.interacoes_agente (
     )
 );
 
-create table public.logs_integracao (
+create table if not exists public.logs_integracao (
   id uuid not null default gen_random_uuid(),
   integracao_id uuid not null,
   lead_id uuid,
@@ -200,7 +200,7 @@ create table public.logs_integracao (
     )
 );
 
-create table public.qualificacoes (
+create table if not exists public.qualificacoes (
   id uuid not null default gen_random_uuid(),
   lead_id uuid not null,
   pontuacao numeric not null,
@@ -239,7 +239,7 @@ create table public.qualificacoes (
     )
 );
 
-create table public.recomendacoes_comerciais (
+create table if not exists public.recomendacoes_comerciais (
   id uuid not null default gen_random_uuid(),
   lead_id uuid not null,
   proximo_passo text not null,
@@ -270,34 +270,34 @@ create table public.recomendacoes_comerciais (
 -- INDEXES
 -- ============================================================
 
-create index idx_historico_status_lead
+create index if not exists idx_historico_status_lead
   on public.historico_status_lead using btree (lead_id);
 
-create index idx_interacoes_lead
+create index if not exists idx_interacoes_lead
   on public.interacoes_agente using btree (lead_id);
 
-create index idx_leads_canal
+create index if not exists idx_leads_canal
   on public.leads using btree (canal_id);
 
-create index idx_leads_email
+create index if not exists idx_leads_email
   on public.leads using btree (email);
 
-create index idx_leads_responsavel
+create index if not exists idx_leads_responsavel
   on public.leads using btree (responsavel_id);
 
-create index idx_leads_status
+create index if not exists idx_leads_status
   on public.leads using btree (status);
 
-create index idx_leads_telefone
+create index if not exists idx_leads_telefone
   on public.leads using btree (telefone);
 
-create index idx_logs_integracao
+create index if not exists idx_logs_integracao
   on public.logs_integracao using btree (integracao_id);
 
-create index idx_qualificacoes_lead
+create index if not exists idx_qualificacoes_lead
   on public.qualificacoes using btree (lead_id);
 
-create index idx_recomendacoes_lead
+create index if not exists idx_recomendacoes_lead
   on public.recomendacoes_comerciais using btree (lead_id);
 
 -- ============================================================
@@ -354,18 +354,21 @@ alter table public.recomendacoes_comerciais enable row level security;
 -- POLICIES: canais_captacao
 -- ============================================================
 
+drop policy if exists "Usuários visualizam canais" on public.canais_captacao;
 create policy "Usuários visualizam canais"
 on public.canais_captacao
 for select
 to authenticated
 using (true);
 
+drop policy if exists "Admin e gestor criam canais" on public.canais_captacao;
 create policy "Admin e gestor criam canais"
 on public.canais_captacao
 for insert
 to authenticated
 with check (eh_gestor_ou_admin());
 
+drop policy if exists "Admin e gestor atualizam canais" on public.canais_captacao;
 create policy "Admin e gestor atualizam canais"
 on public.canais_captacao
 for update
@@ -373,6 +376,7 @@ to authenticated
 using (eh_gestor_ou_admin())
 with check (eh_gestor_ou_admin());
 
+drop policy if exists "Admin e gestor removem canais" on public.canais_captacao;
 create policy "Admin e gestor removem canais"
 on public.canais_captacao
 for delete
@@ -383,6 +387,7 @@ using (eh_gestor_ou_admin());
 -- POLICIES: historico_status_lead
 -- ============================================================
 
+drop policy if exists "Acesso ao histórico de leads" on public.historico_status_lead;
 create policy "Acesso ao histórico de leads"
 on public.historico_status_lead
 for select
@@ -399,6 +404,7 @@ using (
   )
 );
 
+drop policy if exists "Inserir histórico de lead permitido" on public.historico_status_lead;
 create policy "Inserir histórico de lead permitido"
 on public.historico_status_lead
 for insert
@@ -419,12 +425,14 @@ with check (
 -- POLICIES: integracoes
 -- ============================================================
 
+drop policy if exists "Admin e gestor visualizam integrações" on public.integracoes;
 create policy "Admin e gestor visualizam integrações"
 on public.integracoes
 for select
 to authenticated
 using (eh_gestor_ou_admin());
 
+drop policy if exists "Admin gerencia integrações" on public.integracoes;
 create policy "Admin gerencia integrações"
 on public.integracoes
 for all
@@ -436,6 +444,7 @@ with check (tem_perfil('admin'::text));
 -- POLICIES: interacoes_agente
 -- ============================================================
 
+drop policy if exists "Inserir interações permitidas" on public.interacoes_agente;
 create policy "Inserir interações permitidas"
 on public.interacoes_agente
 for insert
@@ -452,6 +461,7 @@ with check (
   )
 );
 
+drop policy if exists "Visualizar interações permitidas" on public.interacoes_agente;
 create policy "Visualizar interações permitidas"
 on public.interacoes_agente
 for select
@@ -472,6 +482,7 @@ using (
 -- POLICIES: leads
 -- ============================================================
 
+drop policy if exists "Usuários visualizam leads permitidos" on public.leads;
 create policy "Usuários visualizam leads permitidos"
 on public.leads
 for select
@@ -481,6 +492,7 @@ using (
   or eh_gestor_ou_admin()
 );
 
+drop policy if exists "Usuários criam leads" on public.leads;
 create policy "Usuários criam leads"
 on public.leads
 for insert
@@ -490,6 +502,7 @@ with check (
   or eh_gestor_ou_admin()
 );
 
+drop policy if exists "Usuários atualizam leads permitidos" on public.leads;
 create policy "Usuários atualizam leads permitidos"
 on public.leads
 for update
@@ -503,6 +516,7 @@ with check (
   or eh_gestor_ou_admin()
 );
 
+drop policy if exists "Admin e gestor removem leads" on public.leads;
 create policy "Admin e gestor removem leads"
 on public.leads
 for delete
@@ -513,12 +527,14 @@ using (eh_gestor_ou_admin());
 -- POLICIES: logs_integracao
 -- ============================================================
 
+drop policy if exists "Admin e gestor visualizam logs" on public.logs_integracao;
 create policy "Admin e gestor visualizam logs"
 on public.logs_integracao
 for select
 to authenticated
 using (eh_gestor_ou_admin());
 
+drop policy if exists "Admin gerencia logs" on public.logs_integracao;
 create policy "Admin gerencia logs"
 on public.logs_integracao
 for all
@@ -530,18 +546,21 @@ with check (tem_perfil('admin'::text));
 -- POLICIES: profiles
 -- ============================================================
 
+drop policy if exists "Admin cria perfis" on public.profiles;
 create policy "Admin cria perfis"
 on public.profiles
 for insert
 to authenticated
 with check (tem_perfil('admin'::text));
 
+drop policy if exists "Admin remove perfis" on public.profiles;
 create policy "Admin remove perfis"
 on public.profiles
 for delete
 to authenticated
 using (tem_perfil('admin'::text));
 
+drop policy if exists "Usuário atualiza próprio perfil" on public.profiles;
 create policy "Usuário atualiza próprio perfil"
 on public.profiles
 for update
@@ -555,6 +574,7 @@ with check (
   or tem_perfil('admin'::text)
 );
 
+drop policy if exists "Usuário visualiza próprio perfil" on public.profiles;
 create policy "Usuário visualiza próprio perfil"
 on public.profiles
 for select
@@ -568,6 +588,7 @@ using (
 -- POLICIES: qualificacoes
 -- ============================================================
 
+drop policy if exists "Inserir qualificações permitidas" on public.qualificacoes;
 create policy "Inserir qualificações permitidas"
 on public.qualificacoes
 for insert
@@ -584,6 +605,7 @@ with check (
   )
 );
 
+drop policy if exists "Visualizar qualificações permitidas" on public.qualificacoes;
 create policy "Visualizar qualificações permitidas"
 on public.qualificacoes
 for select
@@ -604,6 +626,7 @@ using (
 -- POLICIES: recomendacoes_comerciais
 -- ============================================================
 
+drop policy if exists "Inserir recomendações permitidas" on public.recomendacoes_comerciais;
 create policy "Inserir recomendações permitidas"
 on public.recomendacoes_comerciais
 for insert
@@ -620,6 +643,7 @@ with check (
   )
 );
 
+drop policy if exists "Visualizar recomendações permitidas" on public.recomendacoes_comerciais;
 create policy "Visualizar recomendações permitidas"
 on public.recomendacoes_comerciais
 for select
