@@ -212,6 +212,15 @@ const SofipeSupabase = (function(){
     return data;
   }
 
+  // Sofia (IA): a conversa roda na Edge Function "sofia-chat", que guarda a chave do Gemini
+  const NOME_FUNCAO_SOFIA = 'sofia-chat';
+  async function conversarSofia(payload){
+    const { data, error } = await checarCliente().functions.invoke(NOME_FUNCAO_SOFIA, { body: payload });
+    if (error) throw error;
+    if (!data || data.erro || !data.resposta) throw new Error((data && data.erro) || 'Resposta vazia da Sofia.');
+    return data;
+  }
+
   function obterSessaoId(){
     let id = sessionStorage.getItem('sofipe_sessao_sofia');
     if (!id){
@@ -221,7 +230,7 @@ const SofipeSupabase = (function(){
     return id;
   }
 
-  return { criarLead, obterOuCriarLeadChat, registrarInteracao, entrar, sair, sessaoAtual, obterSessaoId, listarLeadsEquipe, listarEquipe, reatribuirLead, gerirEquipe };
+  return { criarLead, obterOuCriarLeadChat, registrarInteracao, conversarSofia, entrar, sair, sessaoAtual, obterSessaoId, listarLeadsEquipe, listarEquipe, reatribuirLead, gerirEquipe };
 })();
 
 /* ---------------- mostrar / ocultar senha ---------------- */
@@ -1758,7 +1767,7 @@ const SofipeSupabase = (function(){
   window.SofipeEquipe = { montar };
 })();
 
-/* ---------------- chatbot Sofia (respostas por palavras-chave) ---------------- */
+/* ---------------- chatbot Sofia (IA via Edge Function; palavras-chave só como reserva) ---------------- */
 (function chatbotSofia(){
   const janela = document.getElementById('sofia');
   const abrir = document.getElementById('abrir-sofia');
@@ -1821,35 +1830,62 @@ const SofipeSupabase = (function(){
     });
   }
 
-  async function responder(texto){
-    const digitando = balao('bot digitando', '•••');
-    const sessionId = SofipeSupabase.obterSessaoId();
+  // áreas do site que a Sofia pode abrir quando a IA sugere
+  const ACOES = {
+    abrir_cadastro: { rotulo: 'Abrir o cadastro', secao: 'cadastro' },
+    abrir_seguros: { rotulo: 'Ver seguros', secao: 'seguros' },
+    abrir_contato: { rotulo: 'Entre em contato', secao: 'contato' },
+    abrir_quem: { rotulo: 'Quem somos', secao: 'quem' }
+  };
+  const MAX_HISTORICO = 16;      // últimas mensagens enviadas à IA a cada turno
+  const historico = [];          // { papel: 'user' | 'model', texto }
+  let ocupado = false;
 
-    // garante um lead para esta conversa e registra a mensagem do visitante
-    // (tabela "interacoes_agente"); se isso falhar, o chat continua normalmente
-    SofipeSupabase.obterOuCriarLeadChat().then(leadId => {
-      if (leadId) SofipeSupabase.registrarInteracao({ lead_id: leadId, mensagem: texto, remetente: 'lead', sessao_id: sessionId });
-    }).catch(() => {});
-
+  // reserva: se a IA falhar (sem internet, função fora do ar), o chat segue com as regras acima
+  function respostaDeReserva(texto){
     const q = normalizar(texto);
     const regra = regras.find(r => r.re.test(q));
-    const resposta = regra ? regra.t : padrao;
+    return { resposta: regra ? regra.t : padrao, botoes: regra && regra.botoes };
+  }
 
-    setTimeout(() => {
-      digitando.remove();
-      const el = balao('bot', resposta);
-      criarBotoes(el, regra && regra.botoes);
-      rolar();
+  async function responder(texto){
+    ocupado = true;
+    const digitando = balao('bot digitando', '•••');
+    const sessionId = SofipeSupabase.obterSessaoId();
+    const leadId = await SofipeSupabase.obterOuCriarLeadChat().catch(() => null);
+    if (leadId) SofipeSupabase.registrarInteracao({ lead_id: leadId, mensagem: texto, remetente: 'lead', sessao_id: sessionId });
 
-      SofipeSupabase.obterOuCriarLeadChat().then(leadId => {
-        if (leadId) SofipeSupabase.registrarInteracao({ lead_id: leadId, mensagem: resposta, remetente: 'agente_ia', sessao_id: sessionId });
-      }).catch(() => {});
-    }, 550);
+    historico.push({ papel: 'user', texto });
+    let resposta, botoes;
+    try {
+      const r = await SofipeSupabase.conversarSofia({
+        sessao_id: sessionId,
+        lead_id: leadId,
+        mensagens: historico.slice(-MAX_HISTORICO)
+      });
+      resposta = r.resposta;
+      botoes = r.acao && ACOES[r.acao] ? [ACOES[r.acao]] : [];
+      if (r.lead_id) sessionStorage.setItem('sofipe_lead_chat_id', r.lead_id);
+    } catch (erro) {
+      console.warn('Sofia (IA) indisponível, usando respostas de reserva:', erro && erro.message);
+      const reserva = respostaDeReserva(texto);
+      resposta = reserva.resposta;
+      botoes = reserva.botoes;
+    }
+
+    historico.push({ papel: 'model', texto: resposta });
+    digitando.remove();
+    const el = balao('bot', resposta);
+    criarBotoes(el, botoes);
+    rolar();
+    ocupado = false;
+
+    if (leadId) SofipeSupabase.registrarInteracao({ lead_id: leadId, mensagem: resposta, remetente: 'agente_ia', sessao_id: sessionId });
   }
 
   function enviar(texto){
     texto = texto.trim();
-    if (!texto) return;
+    if (!texto || ocupado) return;
     balao('eu', texto);
     responder(texto);
   }
@@ -1883,6 +1919,7 @@ const SofipeSupabase = (function(){
   janela.addEventListener('keydown', e => { if (e.key === 'Escape'){ fecharChat(); abrir.focus(); } });
   form.addEventListener('submit', e => {
     e.preventDefault();
+    if (ocupado) return;             // espera a Sofia responder antes de enviar a próxima
     enviar(campo.value);
     campo.value = '';
   });
