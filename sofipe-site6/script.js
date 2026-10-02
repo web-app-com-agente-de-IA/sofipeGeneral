@@ -212,13 +212,16 @@ const SofipeSupabase = (function(){
     return data;
   }
 
-  // Sofia (IA): a conversa roda na Edge Function "sofia-chat", que guarda a chave do Gemini
+  // conversa com a Sofia: roda na Edge Function "sofia-chat", que chama o Gemini (Google)
+  // com a chave guardada no servidor (secret GEMINI_API_KEY)
   const NOME_FUNCAO_SOFIA = 'sofia-chat';
-  async function conversarSofia(payload){
-    const { data, error } = await checarCliente().functions.invoke(NOME_FUNCAO_SOFIA, { body: payload });
+  async function conversarSofia(mensagens, sessaoId){
+    const { data, error } = await checarCliente().functions.invoke(NOME_FUNCAO_SOFIA, {
+      body: { mensagens, sessao_id: sessaoId }
+    });
     if (error) throw error;
-    if (!data || data.erro || !data.resposta) throw new Error((data && data.erro) || 'Resposta vazia da Sofia.');
-    return data;
+    if (!data || !data.resposta) throw new Error((data && data.erro) || 'Resposta vazia da Sofia.');
+    return data; // { resposta, lead_cadastrado }
   }
 
   function obterSessaoId(){
@@ -387,10 +390,19 @@ const SofipeSupabase = (function(){
     },
     contato: {
       titulo: 'Entre em contato',
-      corpo: [
-        'Telefone: (11) 3740-2037 · WhatsApp: (11) 97089-1940.',
-        'E-mail: contato@sofipe.com.br — retornamos no mesmo dia útil.',
-        'Endereço: Rua Isabel Dias, 62 - Sala 03 - Mooca - São Paulo.'
+      tipo: 'contato',
+      subtitulo: 'Fale com a Sofipe pelo canal que for melhor para você. Retornamos no mesmo dia útil.',
+      canais: [
+        { icone: 'telefone', titulo: 'Telefone', texto: '(11) 3740-2037', href: 'tel:+551137402037', acao: 'Ligar agora' },
+        { icone: 'whatsapp', titulo: 'WhatsApp', texto: '(11) 97089-1940', href: 'https://wa.me/5511970891940', externo: true, acao: 'Chamar no WhatsApp' },
+        { icone: 'email', titulo: 'E-mail', texto: 'contato@sofipe.com.br', href: 'mailto:contato@sofipe.com.br', acao: 'Enviar e-mail' },
+        { icone: 'local', titulo: 'Endereço', texto: 'Rua Isabel Dias, 62 - Sala 03 - Mooca - São Paulo',
+          href: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('Rua Isabel Dias, 62, Mooca, São Paulo'), externo: true, acao: 'Ver no mapa' }
+      ],
+      redes: [
+        { icone: 'instagram', nome: 'Instagram', href: 'https://www.instagram.com/sofipesolucoes' },
+        { icone: 'facebook', nome: 'Facebook', href: 'https://www.facebook.com/sofipesolucoes' },
+        { icone: 'linkedin', nome: 'LinkedIn', href: 'https://www.linkedin.com/company/sofipesolucoes/' }
       ]
     },
     cadastro: {
@@ -421,6 +433,16 @@ const SofipeSupabase = (function(){
     'Seguro Residencial': '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v9.5a1 1 0 0 0 1 1h4V15h4v5.5h4a1 1 0 0 0 1-1V10"/></svg>'
   };
 
+
+  const iconesContato = {
+    telefone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h3.5l1.8 4.5-2.2 1.4a11 11 0 0 0 5.5 5.5l1.4-2.2L20 15v3.5a1.5 1.5 0 0 1-1.6 1.5C10.7 19.4 4.6 13.3 4 5.6A1.5 1.5 0 0 1 5 4z"/></svg>',
+    whatsapp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5a8.5 8.5 0 0 0-7.3 12.8L3.5 20.5l4.3-1.1A8.5 8.5 0 1 0 12 3.5z"/><path d="M9 8.5c.2 2.6 2.9 5.3 5.5 5.5l1.2-1.3-2-1-.9.7a4 4 0 0 1-1.9-1.9l.7-.9-1-2z"/></svg>',
+    email: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M4 7l8 6 8-6"/></svg>',
+    local: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>',
+    instagram: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg>',
+    facebook: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 8.5h2V5h-2c-2.2 0-4 1.8-4 4v2H9v3.5h2V19h3.5v-4.5H17l.5-3.5h-3V9c0-.55.45-1 1-1z"/></svg>',
+    linkedin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="9" r="1" fill="currentColor" stroke="none"/><path d="M8 12v5M12 17v-3.2c0-1.5 1-2.3 2.2-2.3S16 12.3 16 13.8V17"/></svg>'
+  };
 
   /* páginas detalhadas do "Saiba Mais" — conteúdo baseado nas páginas oficiais de sofipe.com.br */
   const PASSOS_VIDA = [
@@ -606,6 +628,8 @@ const SofipeSupabase = (function(){
 
       corpo.append(visual, grade);
       texto.append(corpo);
+    } else if (dado.tipo === 'contato'){
+      montarContato(dado);
     } else if (dado.tipo === 'cotacoes'){
       const grade = document.createElement('div');
       grade.className = 'grade-cotacoes';
@@ -683,6 +707,7 @@ const SofipeSupabase = (function(){
     titulo.textContent = cartaoSeguro.titulo;
     painel.classList.remove('painel-seguros');
     painel.classList.remove('painel-quem');
+    painel.classList.remove('painel-contato');
     painel.classList.add('painel-detalhe');
     texto.innerHTML = '';
 
@@ -794,6 +819,227 @@ const SofipeSupabase = (function(){
     painel.setAttribute('aria-hidden', 'false');
     painel.focus();
     atual = 'explicacao-seguro';
+  }
+
+  /* ---------------- painel "Entre em contato" ---------------- */
+  function montarContato(dado){
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const ASSUNTOS = ['Seguro Saúde', 'Seguro de Vida', 'Responsabilidade Civil', 'Seguro Residencial', 'Outro'];
+
+    const intro = document.createElement('p');
+    intro.className = 'contato-intro';
+    intro.textContent = dado.subtitulo;
+    texto.appendChild(intro);
+
+    const corpo = document.createElement('div');
+    corpo.className = 'contato-corpo';
+
+    /* --- coluna da esquerda: canais, redes e atalhos --- */
+    const esquerda = document.createElement('div');
+    esquerda.className = 'contato-esquerda';
+
+    const canais = document.createElement('div');
+    canais.className = 'contato-canais';
+    dado.canais.forEach(c => {
+      const a = document.createElement('a');
+      a.className = 'contato-card';
+      a.href = c.href;
+      if (c.externo){ a.target = '_blank'; a.rel = 'noopener'; }
+      a.innerHTML = `<span class="quem-icone">${iconesContato[c.icone] || ''}</span>`;
+      const h3 = document.createElement('h3');
+      h3.textContent = c.titulo;
+      const p = document.createElement('p');
+      p.textContent = c.texto;
+      const acao = document.createElement('span');
+      acao.className = 'contato-acao';
+      acao.textContent = c.acao;
+      a.append(h3, p, acao);
+      canais.appendChild(a);
+    });
+
+    const redesBloco = document.createElement('div');
+    redesBloco.className = 'contato-redes-bloco';
+    const redesTitulo = document.createElement('p');
+    redesTitulo.className = 'contato-redes-titulo';
+    redesTitulo.textContent = 'Nos siga nas redes sociais';
+    const redes = document.createElement('div');
+    redes.className = 'contato-redes';
+    dado.redes.forEach(r => {
+      const a = document.createElement('a');
+      a.href = r.href;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.setAttribute('aria-label', r.nome + ' da Sofipe');
+      a.innerHTML = iconesContato[r.icone] || '';
+      redes.appendChild(a);
+    });
+    redesBloco.append(redesTitulo, redes);
+
+    const atalhos = document.createElement('div');
+    atalhos.className = 'contato-atalhos';
+    const btnSofia = document.createElement('button');
+    btnSofia.type = 'button';
+    btnSofia.className = 'contato-botao';
+    btnSofia.textContent = 'Falar com a Sofia';
+    btnSofia.addEventListener('click', () => {
+      const chat = document.getElementById('sofia');
+      const abrirChat = document.getElementById('abrir-sofia');
+      if (chat && chat.hidden && abrirChat) abrirChat.click();
+    });
+    const linkCotacao = document.createElement('a');
+    linkCotacao.className = 'contato-botao contato-botao-claro';
+    linkCotacao.href = '#painel';
+    linkCotacao.dataset.secao = 'cadastro';
+    linkCotacao.textContent = 'Pedir uma cotação';
+    atalhos.append(btnSofia, linkCotacao);
+
+    esquerda.append(canais, redesBloco, atalhos);
+
+    /* --- coluna da direita: formulário de mensagem --- */
+    const direita = document.createElement('div');
+    direita.className = 'contato-form-wrap';
+    const formTitulo = document.createElement('h3');
+    formTitulo.className = 'contato-form-titulo';
+    formTitulo.textContent = 'Envie uma mensagem';
+    const formSub = document.createElement('p');
+    formSub.className = 'contato-form-sub';
+    formSub.textContent = 'Conte o que você precisa e nossa equipe retorna no mesmo dia útil.';
+
+    const form = document.createElement('form');
+    form.className = 'form-cadastro form-contato';
+    form.noValidate = true;
+
+    const aviso = document.createElement('p');
+    aviso.className = 'aviso-cadastro';
+    aviso.setAttribute('role', 'status');
+
+    function criarCampo({ id, label, tipo, autocomplete, opcoes, maxLength }){
+      const wrap = document.createElement('div');
+      wrap.className = 'campo-cadastro';
+
+      const rotulo = document.createElement('label');
+      rotulo.className = 'oculto';
+      rotulo.setAttribute('for', id);
+      rotulo.textContent = label;
+
+      let input;
+      if (tipo === 'select'){
+        input = document.createElement('select');
+        const vazia = document.createElement('option');
+        vazia.value = '';
+        vazia.textContent = label;
+        vazia.disabled = true;
+        vazia.selected = true;
+        input.appendChild(vazia);
+        opcoes.forEach(o => {
+          const op = document.createElement('option');
+          op.value = o;
+          op.textContent = o;
+          input.appendChild(op);
+        });
+      } else if (tipo === 'textarea'){
+        input = document.createElement('textarea');
+        input.rows = 4;
+        input.placeholder = label;
+        if (maxLength) input.maxLength = maxLength;
+      } else {
+        input = document.createElement('input');
+        input.type = tipo;
+        input.placeholder = label;
+        input.autocomplete = autocomplete || 'off';
+      }
+      input.id = id;
+      input.setAttribute('aria-describedby', id + '-erro');
+
+      const erro = document.createElement('span');
+      erro.className = 'erro-cadastro';
+      erro.id = id + '-erro';
+      erro.setAttribute('role', 'status');
+
+      input.addEventListener(tipo === 'select' ? 'change' : 'input', () => { erro.textContent = ''; aviso.textContent = ''; });
+
+      wrap.append(rotulo, input, erro);
+      form.appendChild(wrap);
+      return { input, erro };
+    }
+
+    const fNome = criarCampo({ id: 'ct-nome', label: 'Nome', tipo: 'text', autocomplete: 'name' });
+    const fEmail = criarCampo({ id: 'ct-email', label: 'E-mail', tipo: 'email', autocomplete: 'email' });
+    const fTel = criarCampo({ id: 'ct-telefone', label: 'WhatsApp (com DDD)', tipo: 'tel', autocomplete: 'tel' });
+    const fAssunto = criarCampo({ id: 'ct-assunto', label: 'Assunto', tipo: 'select', opcoes: ASSUNTOS });
+    const fMsg = criarCampo({ id: 'ct-mensagem', label: 'Sua mensagem', tipo: 'textarea', maxLength: 500 });
+
+    // consentimento LGPD (igual ao do cadastro)
+    const wrapLgpd = document.createElement('div');
+    wrapLgpd.className = 'campo-cadastro';
+    const labelLgpd = document.createElement('label');
+    labelLgpd.className = 'campo-lgpd';
+    const inputLgpd = document.createElement('input');
+    inputLgpd.type = 'checkbox';
+    inputLgpd.id = 'ct-lgpd';
+    inputLgpd.setAttribute('aria-describedby', 'ct-lgpd-erro');
+    const textoLgpd = document.createElement('span');
+    textoLgpd.textContent = 'Li e aceito a Política de Privacidade e o tratamento dos meus dados conforme a LGPD.';
+    const erroLgpd = document.createElement('span');
+    erroLgpd.className = 'erro-cadastro';
+    erroLgpd.id = 'ct-lgpd-erro';
+    erroLgpd.setAttribute('role', 'status');
+    inputLgpd.addEventListener('change', () => { erroLgpd.textContent = ''; aviso.textContent = ''; });
+    labelLgpd.append(inputLgpd, textoLgpd);
+    wrapLgpd.append(labelLgpd, erroLgpd);
+    form.appendChild(wrapLgpd);
+
+    const botao = document.createElement('button');
+    botao.type = 'submit';
+    botao.className = 'enviar-cadastro';
+    botao.textContent = 'Enviar mensagem';
+    form.append(botao, aviso);
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      aviso.textContent = '';
+      let primeiro = null;
+      const falha = (campo, msg) => { campo.erro.textContent = msg; if (!primeiro) primeiro = campo.input; };
+
+      const nome = fNome.input.value.trim();
+      const email = fEmail.input.value.trim();
+      const tel = fTel.input.value.trim();
+      const digitos = tel.replace(/\D/g, '');
+      const mensagem = fMsg.input.value.trim();
+
+      if (nome.length < 2) falha(fNome, 'Informe seu nome.');
+      if (email && !EMAIL_RE.test(email)) falha(fEmail, 'Informe um e-mail válido.');
+      if (tel && digitos.length < 10) falha(fTel, 'Informe o WhatsApp com DDD.');
+      if (!email && !tel) falha(fEmail, 'Informe um e-mail ou WhatsApp para retornarmos.');
+      if (!fAssunto.input.value) falha(fAssunto, 'Selecione o assunto.');
+      if (mensagem.length < 5) falha(fMsg, 'Escreva sua mensagem.');
+      if (!inputLgpd.checked){ erroLgpd.textContent = 'É necessário aceitar para enviar.'; if (!primeiro) primeiro = inputLgpd; }
+      if (primeiro){ primeiro.focus(); return; }
+
+      botao.disabled = true;
+      botao.textContent = 'Enviando…';
+      try {
+        // grava a mensagem como lead (função pública "criar_lead_publico"); o texto vai em dados_extras.mensagem
+        await SofipeSupabase.criarLead({
+          nome,
+          email,
+          telefone: tel,
+          interesse_principal: fAssunto.input.value,
+          dados_extras: { origem: 'site-contato', mensagem, aceite_lgpd: true }
+        });
+        form.reset();
+        aviso.textContent = 'Mensagem recebida! Nossa equipe vai entrar em contato em breve.';
+      } catch (erro) {
+        aviso.textContent = 'Não foi possível enviar agora. Tente novamente em instantes ou fale com a gente pelo WhatsApp.';
+      } finally {
+        botao.disabled = false;
+        botao.textContent = 'Enviar mensagem';
+      }
+    });
+
+    direita.append(formTitulo, formSub, form);
+    corpo.append(esquerda, direita);
+    texto.appendChild(corpo);
   }
 
   function montarFormularioCadastro(){
@@ -1127,6 +1373,7 @@ const SofipeSupabase = (function(){
     titulo.textContent = dado.titulo;
     painel.classList.toggle('painel-seguros', dado.tipo === 'cotacoes');
     painel.classList.toggle('painel-quem', dado.tipo === 'quem');
+    painel.classList.toggle('painel-contato', dado.tipo === 'contato');
     painel.classList.remove('painel-detalhe');
     painel.classList.toggle('painel-leads', dado.tipo === 'leads' || dado.tipo === 'equipe');
     montarConteudo(dado);
@@ -1144,7 +1391,7 @@ const SofipeSupabase = (function(){
   const atalho = document.getElementById('atalho-leads');
   if (!painel) return;
 
-  const ORIGENS = { 'site-cadastro': 'Cadastro no site', 'newsletter': 'Newsletter', 'chat_site': 'Chat da Sofia' };
+  const ORIGENS = { 'site-cadastro': 'Cadastro no site', 'newsletter': 'Newsletter', 'chat_site': 'Chat da Sofia', 'site-contato': 'Fale conosco' };
   const POR_PAGINA = 25;
   const DIA = 864e5;
   let sessao = { usuario: null, perfil: null };
@@ -1767,7 +2014,7 @@ const SofipeSupabase = (function(){
   window.SofipeEquipe = { montar };
 })();
 
-/* ---------------- chatbot Sofia (IA via Edge Function; palavras-chave só como reserva) ---------------- */
+/* ---------------- chatbot Sofia (Gemini via Edge Function; palavras-chave como reserva) ---------------- */
 (function chatbotSofia(){
   const janela = document.getElementById('sofia');
   const abrir = document.getElementById('abrir-sofia');
@@ -1830,64 +2077,66 @@ const SofipeSupabase = (function(){
     });
   }
 
-  // áreas do site que a Sofia pode abrir quando a IA sugere
-  const ACOES = {
-    abrir_cadastro: { rotulo: 'Abrir o cadastro', secao: 'cadastro' },
-    abrir_seguros: { rotulo: 'Ver seguros', secao: 'seguros' },
-    abrir_contato: { rotulo: 'Entre em contato', secao: 'contato' },
-    abrir_quem: { rotulo: 'Quem somos', secao: 'quem' }
-  };
-  const MAX_HISTORICO = 16;      // últimas mensagens enviadas à IA a cada turno
-  const historico = [];          // { papel: 'user' | 'model', texto }
-  let ocupado = false;
+  // histórico da conversa (role/content), guardado na sessão do navegador
+  const CHAVE_HIST = 'sofipe_hist_sofia';
+  let historico = [];
+  try { historico = JSON.parse(sessionStorage.getItem(CHAVE_HIST) || '[]'); } catch (e) { historico = []; }
+  function salvarHistorico(){
+    try { sessionStorage.setItem(CHAVE_HIST, JSON.stringify(historico.slice(-30))); } catch (e) { /* ignora */ }
+  }
 
-  // reserva: se a IA falhar (sem internet, função fora do ar), o chat segue com as regras acima
-  function respostaDeReserva(texto){
+  // reserva: se o Gemini falhar (função fora do ar, sem internet), usa as regras por palavras-chave
+  function respostaPorRegras(texto){
     const q = normalizar(texto);
     const regra = regras.find(r => r.re.test(q));
-    return { resposta: regra ? regra.t : padrao, botoes: regra && regra.botoes };
+    return { texto: regra ? regra.t : padrao, botoes: regra && regra.botoes };
   }
 
   async function responder(texto){
-    ocupado = true;
     const digitando = balao('bot digitando', '•••');
     const sessionId = SofipeSupabase.obterSessaoId();
-    const leadId = await SofipeSupabase.obterOuCriarLeadChat().catch(() => null);
-    if (leadId) SofipeSupabase.registrarInteracao({ lead_id: leadId, mensagem: texto, remetente: 'lead', sessao_id: sessionId });
 
-    historico.push({ papel: 'user', texto });
+    // garante um lead para esta conversa e registra a mensagem do visitante
+    // (tabela "interacoes_agente"); se isso falhar, o chat continua normalmente
+    SofipeSupabase.obterOuCriarLeadChat().then(leadId => {
+      if (leadId) SofipeSupabase.registrarInteracao({ lead_id: leadId, mensagem: texto, remetente: 'lead', sessao_id: sessionId });
+    }).catch(() => {});
+
+    historico.push({ role: 'user', content: texto });
+    salvarHistorico();
+
     let resposta, botoes;
     try {
-      const r = await SofipeSupabase.conversarSofia({
-        sessao_id: sessionId,
-        lead_id: leadId,
-        mensagens: historico.slice(-MAX_HISTORICO)
-      });
+      const r = await SofipeSupabase.conversarSofia(historico.slice(-30), sessionId);
       resposta = r.resposta;
-      botoes = r.acao && ACOES[r.acao] ? [ACOES[r.acao]] : [];
-      if (r.lead_id) sessionStorage.setItem('sofipe_lead_chat_id', r.lead_id);
     } catch (erro) {
-      console.warn('Sofia (IA) indisponível, usando respostas de reserva:', erro && erro.message);
-      const reserva = respostaDeReserva(texto);
-      resposta = reserva.resposta;
+      console.warn('Gemini indisponível, usando respostas padrão:', erro && erro.message);
+      const reserva = respostaPorRegras(texto);
+      resposta = reserva.texto;
       botoes = reserva.botoes;
     }
 
-    historico.push({ papel: 'model', texto: resposta });
+    historico.push({ role: 'assistant', content: resposta });
+    salvarHistorico();
+
     digitando.remove();
     const el = balao('bot', resposta);
     criarBotoes(el, botoes);
     rolar();
-    ocupado = false;
 
-    if (leadId) SofipeSupabase.registrarInteracao({ lead_id: leadId, mensagem: resposta, remetente: 'agente_ia', sessao_id: sessionId });
+    SofipeSupabase.obterOuCriarLeadChat().then(leadId => {
+      if (leadId) SofipeSupabase.registrarInteracao({ lead_id: leadId, mensagem: resposta, remetente: 'agente_ia', sessao_id: sessionId });
+    }).catch(() => {});
   }
 
+  let aguardando = false;
   function enviar(texto){
     texto = texto.trim();
-    if (!texto || ocupado) return;
+    if (!texto) return;
+    if (aguardando) return;
+    aguardando = true;
     balao('eu', texto);
-    responder(texto);
+    responder(texto).finally(() => { aguardando = false; });
   }
 
   function abrirChat(){
@@ -1895,7 +2144,11 @@ const SofipeSupabase = (function(){
     abrir.hidden = true;                 // o botão some enquanto o chat está aberto
     abrir.setAttribute('aria-expanded', 'true');
     if (!msgs.children.length){
-      balao('bot', 'Olá! Eu sou a Sofia, assistente virtual da Sofipe. Como posso te ajudar hoje?');
+      if (historico.length){
+        historico.forEach(m => balao(m.role === 'user' ? 'eu' : 'bot', m.content));
+      } else {
+        balao('bot', 'Olá! Eu sou a Sofia, assistente virtual da Sofipe. Como posso te ajudar hoje?');
+      }
     }
     campo.focus();
   }
@@ -1919,7 +2172,6 @@ const SofipeSupabase = (function(){
   janela.addEventListener('keydown', e => { if (e.key === 'Escape'){ fecharChat(); abrir.focus(); } });
   form.addEventListener('submit', e => {
     e.preventDefault();
-    if (ocupado) return;             // espera a Sofia responder antes de enviar a próxima
     enviar(campo.value);
     campo.value = '';
   });
