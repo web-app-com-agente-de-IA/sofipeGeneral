@@ -262,7 +262,38 @@ const SofipeSupabase = (function(){
   const nomeUsuario = document.getElementById('usuario-logado');
   const botaoSair = document.getElementById('sair');
   const cardAcesso = document.getElementById('acesso');
+  const botaoEquipe = document.getElementById('abrir-login');
+  const botaoFecharLogin = document.getElementById('fechar-login');
   if (!login || !senha || !botao) return;
+
+  // o login fica escondido atrás do botão "Equipe" do topo e abre como janela
+  function abrirLogin(){
+    if (!cardAcesso) return;
+    cardAcesso.hidden = false;
+    document.body.classList.add('login-aberto');
+    if (botaoEquipe) botaoEquipe.setAttribute('aria-expanded', 'true');
+    login.focus();
+  }
+  function fecharLogin(devolverFoco){
+    if (!cardAcesso || cardAcesso.hidden) return;
+    cardAcesso.hidden = true;
+    document.body.classList.remove('login-aberto');
+    erroLogin.textContent = '';
+    erroSenha.textContent = '';
+    aviso.textContent = '';
+    if (botaoEquipe){
+      botaoEquipe.setAttribute('aria-expanded', 'false');
+      if (devolverFoco) botaoEquipe.focus();
+    }
+  }
+  if (botaoEquipe) botaoEquipe.addEventListener('click', () => (cardAcesso.hidden ? abrirLogin() : fecharLogin(true)));
+  if (botaoFecharLogin) botaoFecharLogin.addEventListener('click', () => fecharLogin(true));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharLogin(true); });
+  document.addEventListener('mousedown', e => {      // clicar fora da janela fecha
+    if (cardAcesso.hidden) return;
+    if (cardAcesso.contains(e.target) || (botaoEquipe && botaoEquipe.contains(e.target))) return;
+    fecharLogin(false);
+  });
 
   const ROTULOS_PERFIL = { admin: 'Administrador', gestor: 'Gestor', vendedor: 'Vendedor' };
 
@@ -270,7 +301,8 @@ const SofipeSupabase = (function(){
     const papel = sessao && sessao.perfil ? ROTULOS_PERFIL[sessao.perfil.perfil] : '';
     if (nomeUsuario){ nomeUsuario.textContent = (nome || '') + (papel ? ' · ' + papel : ''); nomeUsuario.hidden = false; }
     if (botaoSair) botaoSair.hidden = false;
-    if (cardAcesso) cardAcesso.hidden = true;
+    fecharLogin(false);
+    if (botaoEquipe) botaoEquipe.hidden = true;
     document.body.classList.add('modo-equipe');      // logado: só o que importa para a equipe
     window.scrollTo(0, 0);
     document.dispatchEvent(new CustomEvent('sofipe:login', { detail: sessao || { usuario: null, perfil: null } }));
@@ -278,7 +310,7 @@ const SofipeSupabase = (function(){
   function mostrarDeslogado(){
     if (nomeUsuario){ nomeUsuario.textContent = ''; nomeUsuario.hidden = true; }
     if (botaoSair) botaoSair.hidden = true;
-    if (cardAcesso) cardAcesso.hidden = false;
+    if (botaoEquipe) botaoEquipe.hidden = false;      // o login volta a ficar atrás do botão Equipe
     if (window.SofipeFecharPainel) window.SofipeFecharPainel();
     document.body.classList.remove('modo-equipe');   // volta ao site público
     document.dispatchEvent(new CustomEvent('sofipe:logout'));
@@ -1703,8 +1735,8 @@ const SofipeSupabase = (function(){
         rot.setAttribute('for', 'leads-resp-sel');
         const sel = el('select', 'leads-select');
         sel.id = 'leads-resp-sel';
-        equipe.forEach(m => {
-          const o = el('option', null, m.nome + ' (' + m.perfil + ') · ' + m.total_leads + ' leads');
+        equipe.filter(m => m.perfil === 'vendedor').forEach(m => {     // leads só vão para vendedores
+          const o = el('option', null, m.nome + ' · ' + m.total_leads + ' leads');
           o.value = m.id;
           sel.appendChild(o);
         });
@@ -1733,7 +1765,7 @@ const SofipeSupabase = (function(){
           }
         });
 
-        if (equipe.length){
+        if (sel.options.length){
           bloco.append(rot, sel, salvar, msg);
           corpo.appendChild(bloco);
         }
@@ -2175,4 +2207,13 @@ const SofipeSupabase = (function(){
     enviar(campo.value);
     campo.value = '';
   });
+})();
+
+/* ---------------- bloco de boas-vindas ao lead: botão que abre a Sofia ---------------- */
+(function heroLead(){
+  const botao = document.getElementById('hero-sofia');
+  const abrirChat = document.getElementById('abrir-sofia');
+  const chat = document.getElementById('sofia');
+  if (!botao || !abrirChat || !chat) return;
+  botao.addEventListener('click', () => { if (chat.hidden) abrirChat.click(); });
 })();

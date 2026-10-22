@@ -26,6 +26,7 @@
         <a class="atalho" href="#painel" data-secao="quem">Quem somos</a>
         <a class="atalho" href="#painel" data-secao="seguros">Seguros</a>
         <a class="atalho" href="#painel" data-secao="contato">Entre em contato</a>
+        <button class="atalho atalho-equipe-login" id="abrir-login" type="button" aria-haspopup="dialog" aria-controls="acesso" aria-expanded="false">Equipe</button>
         <a class="atalho" href="#painel" data-secao="leads" id="atalho-leads" hidden>Leads</a>
         <a class="atalho" href="#painel" data-secao="equipe" id="atalho-equipe" hidden>Equipe</a>
         <span class="usuario-logado" id="usuario-logado" hidden></span>
@@ -36,7 +37,23 @@
     <main class="conteudo">
       <h1 class="titulo"><b>Sofipe</b> Especialistas em planos de saúde, escolha com quem entende.</h1>
 
-      <section class="acesso" id="acesso" aria-label="Acesso restrito da equipe Sofipe">
+      <section class="hero-lead" id="hero-lead" aria-label="Seu plano de saúde com quem entende">
+        <div class="hero-lead-foto">
+          <img src="Foto-quem-somos.png" alt="" loading="lazy">
+        </div>
+        <div class="hero-lead-texto">
+          <p class="hero-lead-selo">Cotação gratuita e sem compromisso</p>
+          <h2>Encontre o plano de saúde ideal para você, sua família ou sua empresa.</h2>
+          <p>Comparamos as principais operadoras e voltamos com as melhores opções para o seu perfil. Você não paga nada por isso.</p>
+          <div class="hero-lead-acoes">
+            <a class="hero-lead-botao" href="#painel" data-secao="cadastro">Quero minha cotação</a>
+            <button class="hero-lead-botao hero-lead-botao-claro" type="button" id="hero-sofia">Falar com a Sofia</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="acesso" id="acesso" role="dialog" aria-label="Acesso restrito da equipe Sofipe" hidden>
+        <button class="acesso-fechar" id="fechar-login" type="button" aria-label="Fechar">&times;</button>
         <div class="marca-card">
           <span class="selo">
             <img class="simbolo" src="logo.png" alt="">
@@ -68,11 +85,6 @@
 
         <button class="entrar" id="entrar" type="button">Entrar</button>
         <p class="aviso" id="aviso" role="status"></p>
-
-        <p class="cadastro">
-          Ainda não é cliente?
-          <a href="#painel" data-secao="cadastro">Peça uma cotação</a>
-        </p>
       </section>
 
       <article class="painel" id="painel" aria-hidden="true" tabindex="-1">
