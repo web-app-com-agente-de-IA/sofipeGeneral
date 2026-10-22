@@ -77,7 +77,7 @@ body{
 
 .conteudo{
   display:grid;
-  grid-template-columns:minmax(0,1.35fr) minmax(280px,360px);
+  grid-template-columns:minmax(0,1.2fr) minmax(300px,440px);
   gap:clamp(32px,5vw,64px);
   align-items:center;
   flex:1;
@@ -139,6 +139,36 @@ body{
   gap:22px;
 }
 .acesso[hidden]{display:none}
+
+/* o login agora é uma janela aberta pelo botão "Equipe" do topo */
+.acesso{
+  position:fixed;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  z-index:1100;
+  width:min(380px,calc(100vw - 32px));
+  max-height:calc(100vh - 32px);
+  overflow:auto;
+  box-shadow:0 0 0 100vmax rgba(0,0,0,.65), 0 26px 60px rgba(0,0,0,.5);
+  animation:surge .2s ease-out;
+}
+.acesso-fechar{
+  position:absolute;
+  top:12px;right:14px;
+  border:0;
+  background:transparent;
+  color:#2b2b2b;
+  font:inherit;
+  font-size:1.7rem;
+  line-height:1;
+  padding:2px 9px;
+  border-radius:50%;
+  cursor:pointer;
+}
+.acesso-fechar:hover{background:rgba(0,0,0,.12)}
+.acesso-fechar:focus-visible{outline:3px solid var(--petroleo-escuro);outline-offset:2px}
+.atalho-equipe-login{font:inherit;font-size:.95rem;font-weight:500;cursor:pointer}
+.login-aberto{overflow:hidden}
 .marca-card{
   display:flex;
   align-items:center;
@@ -1127,7 +1157,6 @@ a.detalhe-site{
 @media (max-width: 900px){
   .conteudo{grid-template-columns:1fr;align-items:start;gap:32px}
   .titulo{max-width:none}
-  .acesso{max-width:420px;width:100%}
 }
 @media (max-width: 700px){
   .cabecalho{justify-content:center;text-align:center}
@@ -1518,8 +1547,66 @@ a.detalhe-site{
 .equipe-status.on{background:var(--petroleo);color:#fff}
 .equipe-status.off{background:rgba(255,255,255,.12);color:#bdbdbd}
 
+/* ============ Bloco de boas-vindas ao lead (coluna da direita) ============ */
+.hero-lead{
+  display:flex;
+  flex-direction:column;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,199,0,.35);
+  border-radius:var(--raio-card);
+  overflow:hidden;
+  box-shadow:0 26px 60px rgba(0,0,0,.45);
+}
+.hero-lead-foto{
+  aspect-ratio:500/250;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:clamp(12px,2vw,20px) clamp(12px,2vw,20px) 0;
+}
+.hero-lead-foto img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 12px 26px rgba(0,0,0,.4))}
+.hero-lead-texto{padding:clamp(18px,2.4vw,28px)}
+.hero-lead-selo{
+  display:inline-block;
+  background:var(--amarelo);
+  color:#2b2b2b;
+  font-size:.72rem;
+  font-weight:600;
+  letter-spacing:.03em;
+  padding:4px 12px;
+  border-radius:999px;
+  margin-bottom:12px;
+}
+.hero-lead-texto h2{font-size:clamp(1.15rem,1.7vw,1.4rem);font-weight:600;line-height:1.3;margin-bottom:10px}
+.hero-lead-texto > p:not(.hero-lead-selo){color:#d0d0d0;font-size:.92rem;line-height:1.6}
+.hero-lead-acoes{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.hero-lead-botao{
+  display:inline-block;
+  border:2px solid var(--amarelo);
+  background:var(--amarelo);
+  color:#2b2b2b;
+  font:inherit;
+  font-size:.92rem;
+  font-weight:600;
+  text-decoration:none;
+  padding:11px 22px;
+  border-radius:999px;
+  cursor:pointer;
+  transition:background .18s ease, color .18s ease, transform .18s ease;
+}
+.hero-lead-botao:hover{background:var(--amarelo-claro);border-color:var(--amarelo-claro)}
+.hero-lead-botao:active{transform:scale(.985)}
+.hero-lead-botao:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.hero-lead-botao-claro{background:transparent;color:var(--amarelo)}
+.hero-lead-botao-claro:hover{background:var(--amarelo);color:#2b2b2b}
+
+@media (max-width:900px){
+  .hero-lead{max-width:520px;width:100%}
+}
+
 /* ============ Modo equipe: com login ativo, só o que é útil aos operadores ============ */
 .modo-equipe .titulo,
+.modo-equipe .hero-lead,
 .modo-equipe .parceiros,
 .modo-equipe .como-funciona,
 .modo-equipe .destaque,
